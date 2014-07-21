@@ -64,8 +64,15 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $newPass = $this->newPass;
         }
 
-        $trans = array("{name}" => $page->name, "{pass}" => $newPass);
-        $body = strtr($this->data['body'], $trans);
+        //replace curly braces codes with matching PW field names
+        $body = $this->data['body'];
+        if (preg_match_all('/{([^}]*)}/', $body, $matches)) {
+            foreach ($matches[0] as $match) {
+                $field = str_replace(array('{','}'), '', $match);
+                $body = $field == "pass" ? str_replace($match, $newPass, $body) : str_replace($match, $page->$field, $body); //exception for pass field
+            }
+        }
+
 
         if($page->pass == '' || $page->email == ''){
             $this->error("No email was sent to the new user because either their email address or password was not set.");
