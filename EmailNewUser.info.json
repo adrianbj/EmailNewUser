@@ -1,0 +1,9 @@
+{
+	"title": "Email New User",
+	"summary": "Email new user their account details, and optionally automatically generate a password for them.",
+	"version": 1,
+	"author": "Adrian Jones",
+    "autoload": true,
+    "requires": "ProcessWire>=2.4.3",
+	"icon": "envelope-o"
+}
