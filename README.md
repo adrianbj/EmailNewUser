@@ -4,13 +4,11 @@ EmailNewUser
 Processwire module for emailing a new user their account details, and optionally automatically generate a password for them.
 
 The following things are configurable:
-From email address (if left blank it will use the admin email set in the config/php file
 
-Email subject
-
-Email body - includes the ability to use any fields from the user template using {field_name} codes so these can be put into the body wherever you want.
-
-Whether to automatically generate a password. This can be toggled on/off, but even if it is on, you can override it by simply entering a password manually when creating the new user.
+* From email address (if left blank it will use the admin email set in the config/php file
+* Email subject
+* Email body - includes the ability to use any fields from the user template using {field_name} codes so these can be put into the body wherever you want.
+* Whether to automatically generate a password. This can be toggled on/off, but even if it is on, you can override it by simply entering a password manually when creating the new user.
 
 Because it is generally not a good idea to email passwords, it is highly recommended to use the new Password Force Change module in conjunction with this module. That way the user has to change their password the first time they login which will somewhat reduce the vulnerability of emailing the password.
 
