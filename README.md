@@ -14,6 +14,9 @@ Because it is generally not a good idea to email passwords, it is highly recomme
 
 Please let me know if you have any ideas for improvements.
 
+###Spport
+https://processwire.com/talk/topic/7051-email-new-user/
+
 ## License
 
 This program is free software; you can redistribute it and/or
