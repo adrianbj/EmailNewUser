@@ -169,7 +169,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->label = __('Email Body');
         $f->description = __('Body text for the email');
         $f->value = $data['body'];
-        $f->notes = __("Use: {name} and {pass} in the text where you want these to appear in the email.");
+        $f->notes = __("Use: {name} and {pass}, or any other custom fields from the user template, eg. {first_name} in the text where you want them to appear in the email.");
         $wrapper->add($f);
 
         $f = wire('modules')->get("InputfieldCheckbox");
