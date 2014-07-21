@@ -59,7 +59,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($this->data['generatePassword'] && $this->newPass == ''){
             $newPass = $this->generateStrongPassword();
             $page->pass = $newPass;
-            $this->message("The automatically generated password for this new user is: $newPass");
+            $this->message("The automatically generated password for user {$page->name} is $newPass");
         }
         else{ //manually entered only, or manually entered to override automatically generated password
             $newPass = $this->newPass;
