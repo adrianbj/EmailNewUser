@@ -1,7 +1,7 @@
 EmailNewUser
 ============
 
-Email new user their account details, and optionally automatically generate a password for them.
+Processwire module for emailing a new user their account details, and optionally automatically generate a password for them.
 
 ## License
 
