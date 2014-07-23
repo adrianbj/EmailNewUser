@@ -59,7 +59,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($this->data['generatePassword'] && $this->newPass == ''){
             $newPass = $this->generateStrongPassword();
             $page->pass = $newPass;
-            $this->message("The automatically generated password for user {$page->name} is $newPass");
+            $this->message("The automatically generated password for {$page->name} is $newPass");
         }
         else{ //manually entered only, or manually entered to override automatically generated password
             $newPass = $this->newPass;
@@ -80,7 +80,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
         else{
             wireMail($page->email, $this->data['fromEmail'], $this->data['subject'], $body);
-            $this->message("The new user was sent an email with their username and password details.");
+            $this->message("{$page->name} was successfully sent a welcome email.");
         }
 
 
@@ -169,7 +169,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->label = __('Email Body');
         $f->description = __('Body text for the email');
         $f->value = $data['body'];
-        $f->notes = __("Use: {name} and {pass}, or any other custom fields from the user template, eg. {first_name} in the text where you want them to appear in the email.");
+        $f->notes = __("Use: {name} and {pass}, or any other custom fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:\n\nWelcome {first_name} {last_name}\n\nPlease login in at: http://".wire('config')->httpHost.wire('config')->urls->admin."\n\nUsername: {name}\nPassword: {pass}\n\nIf you have any questions, please email us at: support@mywebcompany.com");
         $wrapper->add($f);
 
         $f = wire('modules')->get("InputfieldCheckbox");
