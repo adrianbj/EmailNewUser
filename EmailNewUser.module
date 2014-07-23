@@ -70,7 +70,21 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if (preg_match_all('/{([^}]*)}/', $body, $matches)) {
             foreach ($matches[0] as $match) {
                 $field = str_replace(array('{','}'), '', $match);
-                $body = $field == "pass" ? str_replace($match, $newPass, $body) : str_replace($match, $page->$field, $body); //exception for pass field
+
+                if($field == "pass"){
+                    $replacement = $newPass;
+                }
+                elseif($field == "adminUrl"){
+                    $replacement = "http://".wire('config')->httpHost.wire('config')->urls->admin;
+                }
+                elseif($field == "fromEmail"){
+                    $replacement = $this->data['fromEmail'];
+                }
+                else{
+                    $replacement = $page->$field;
+                }
+
+                $body = str_replace($match, $replacement, $body);
             }
         }
 
@@ -153,7 +167,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->attr('name', 'fromEmail');
         $f->label = __('From email address');
         $f->description = __('Email address that the email will come from.');
-        $f->notes = __("If left blank, it will use the adminEmail address as defined in your site's config.php file. If that is also blank, the email will not be sent.");
+        $f->notes = __("If set, this will initially be populated with the adminEmail address defined in your site's config.php file. If this field is blank, the email will not be sent.");
         $f->value = $data['fromEmail'];
         $wrapper->add($f);
 
@@ -169,7 +183,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->label = __('Email Body');
         $f->description = __('Body text for the email');
         $f->value = $data['body'];
-        $f->notes = __("Use: {name} and {pass}, or any other custom fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:\n\nWelcome {first_name} {last_name}\n\nPlease login in at: http://".wire('config')->httpHost.wire('config')->urls->admin."\n\nUsername: {name}\nPassword: {pass}\n\nIf you have any questions, please email us at: support@mywebcompany.com");
+        $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:\n---------------------------------------------------------------------------------------\n\nWelcome {first_name} {last_name}\n\nPlease login in at: {adminUrl}\n\nUsername: {name}\nPassword: {pass}\n\nIf you have any questions, please email us at: {fromEmail}\n\n---------------------------------------------------------------------------------------\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://".wire('config')->httpHost.wire('config')->urls->admin." and {$data['fromEmail']}, respectively.\n\n");
         $wrapper->add($f);
 
         $f = wire('modules')->get("InputfieldCheckbox");
