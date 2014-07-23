@@ -10,7 +10,9 @@ The following things are configurable:
 * Email body - includes the ability to use any fields from the user template using {field_name} codes so these can be put into the body wherever you want.
 * Whether to automatically generate a password. This can be toggled on/off, but even if it is on, you can override it by simply entering a password manually when creating the new user.
 
-Because it is generally not a good idea to email passwords, it is highly recommended to use the new Password Force Change module in conjunction with this module. That way the user has to change their password the first time they login which will somewhat reduce the vulnerability of emailing the password.
+Because it is generally not a good idea to email passwords, if you choose to include their password in the email, it is highly recommended to use the new Password Force Change module in conjunction with this module. That way the user has to change their password the first time they login which will somewhat reduce the vulnerability of emailing the password.
+
+In the module configuratiom you create the custom message using any of the fields from the user's page however you want, so you if you don't want to email the pasword, you could let your clients know their initial default password over the phone (potentially the same for each person in their team), but still have this module automatically send each user an email with their username and the link to the site's PW admin control panel.
 
 Please let me know if you have any ideas for improvements.
 
