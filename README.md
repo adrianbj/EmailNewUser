@@ -5,7 +5,7 @@ Processwire module for emailing a new user their account details, and optionally
 
 The following things are configurable:
 
-* From email address (if left blank it will use the admin email set in the config/php file
+* From email address (initially set to PW's admin email config setting)
 * Email subject
 * Email body - includes the ability to use any fields from the user template using {field_name} codes so these can be put into the body wherever you want.
 * Whether to automatically generate a password. This can be toggled on/off, but even if it is on, you can override it by simply entering a password manually when creating the new user.
