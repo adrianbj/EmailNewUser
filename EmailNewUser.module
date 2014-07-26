@@ -59,7 +59,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($this->data['generatePassword'] && $this->newPass == ''){
             $newPass = $this->generateStrongPassword();
             $page->pass = $newPass;
-            $this->message("The automatically generated password for {$page->name} is $newPass");
+            $this->message($this->_("The automatically generated password for {$page->name} is $newPass"));
         }
         else{ //manually entered only, or manually entered to override automatically generated password
             $newPass = $this->newPass;
@@ -90,11 +90,11 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
 
         if($page->pass == '' || $page->email == ''){
-            $this->error("No email was sent to the new user because either their email address or password was not set.");
+            $this->error($this->_("No email was sent to the new user because either their email address or password was not set."));
         }
         else{
             wireMail($page->email, $this->data['fromEmail'], $this->data['subject'], $body);
-            $this->message("{$page->name} was successfully sent a welcome email.");
+            $this->message($this->_("{$page->name} was successfully sent a welcome email."));
         }
 
 
