@@ -34,9 +34,16 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     public function init() {
+        $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
         $this->addHookAfter('InputfieldPassword::processInput', $this, 'getPassword');
         $this->pages->addHookBefore('saveReady', $this, 'sendNewUserEmail');
     }
+
+
+    public function removeRequired(HookEvent $event) {
+        if($this->data['generatePassword']) $event->object->required = false; //hack to remove required status so that automatically generated password can be added on saveReady
+    }
+
 
     /**
      * Get the plain text version of a manually entered password
