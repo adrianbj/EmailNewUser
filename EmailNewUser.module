@@ -34,14 +34,20 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     public function init() {
-        $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
+        if($this->data['generatePassword']){
+            $this->addHookBefore('InputfieldPassword::render', $this, 'notRequiredNote');
+            $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
+        }
         $this->addHookAfter('InputfieldPassword::processInput', $this, 'getPassword');
         $this->pages->addHookBefore('saveReady', $this, 'sendNewUserEmail');
     }
 
+    public function notRequiredNote(HookEvent $event) {
+        $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will overwrite the generated one.';
+    }
 
     public function removeRequired(HookEvent $event) {
-        if($this->data['generatePassword']) $event->object->required = false; //hack to remove required status so that automatically generated password can be added on saveReady
+        $event->object->required = false; //hack to remove required status so that automatically generated password can be added on saveReady
     }
 
 
