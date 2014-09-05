@@ -43,7 +43,8 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     public function notRequiredNote(HookEvent $event) {
-        $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will overwrite the generated one.';
+        $userpage = $this->pages->get((int)$this->input->get->id);
+        if($userpage->is(Page::statusUnpublished)) $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will overwrite the generated one.';
     }
 
     public function removeRequired(HookEvent $event) {
