@@ -119,7 +119,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     // Note: the $add_dashes option will increase the length of the password by
     // floor(sqrt(N)) characters.
 
-    function generateStrongPassword($length = 9, $add_dashes = false, $available_sets = 'luds'){
+    public function generateStrongPassword($length = 9, $add_dashes = false, $available_sets = 'luds'){
 
         $sets = array();
         if(strpos($available_sets, 'l') !== false)
