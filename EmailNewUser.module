@@ -205,7 +205,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->label = __('Generate Password');
         $f->description = __('Whether to automatically generate a password for the user.');
         $f->attr('checked', $data['generatePassword'] ? 'checked' : '' );
-        $f->notes = __("The automatically generated password will be assigned to the user and emailed to them.");
+        $f->notes = __("An automatically generated password will be assigned to the user.\nIf you have included {pass} in the email body then it will be emailed to them. If not, the password will be displayed in the message bar at the top of the page after you save the user - be sure to note it somewhere.");
         $wrapper->add($f);
 
         return $wrapper;
