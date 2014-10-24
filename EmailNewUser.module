@@ -19,7 +19,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                 "fromEmail" => wire('config')->adminEmail,
                 "generatePassword" => "",
                 "subject" => "",
-                "body" => ""
+                "body" => "",
+                "passLength" => "9",
+                "availableSets" => array('l','u','d','s')
             );
     }
 
@@ -71,7 +73,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if(!$page->isChanged('status') || $page->is(Page::statusUnpublished) || $this->data['fromEmail'] == '') return;
 
         if($this->data['generatePassword'] && $this->newPass == ''){
-            $newPass = $this->generateStrongPassword();
+            $newPass = $this->generateStrongPassword($this->data['passLength'], false, implode(",", $this->data['availableSets']));
             $page->pass = $newPass;
             $this->message($this->_("The automatically generated password for {$page->name} is $newPass"));
         }
@@ -179,6 +181,11 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $data = array_merge(self::getDefaultData(), $data);
 
+        $missing = 0;
+        if(!in_array('d', $data['availableSets'])) $missing++;
+        if(!in_array('l', $data['availableSets']) && !in_array('u', $data['availableSets'])) $missing++;
+        if($missing > 0) wire()->error(__("You need to have digits and at least one of the letter options checked."));
+
         // send test email if requested
         if (wire('input')->post->test) {
             wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], EmailNewUser::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
@@ -215,7 +222,34 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->label = __('Generate Password');
         $f->description = __('Whether to automatically generate a password for the user.');
         $f->attr('checked', $data['generatePassword'] ? 'checked' : '' );
+        $f->columnWidth = 40;
         $f->notes = __("An automatically generated password will be assigned to the user.\nIf you have included {pass} in the email body then it will be emailed to them. If not, the password will be displayed in the message bar at the top of the page after you save the user - be sure to note it somewhere.");
+        $wrapper->add($f);
+
+        $f = wire('modules')->get("InputfieldSelect");
+        $f->attr('name', 'passLength');
+        $f->label = __('Password Length');
+        $f->description = __('Number of characters in automatically generated password. Minimum of 6 characters is required by PW.');
+        $f->columnWidth = 20;
+        for($i=6;$i<16;$i++) $f->addOption($i,$i);
+        $f->showIf = "generatePassword=1";
+        $f->required = 1;
+        $f->requiredIf = "generatePassword=1";
+        $f->value = $data['passLength'];
+        $wrapper->add($f);
+
+        $f = wire('modules')->get("InputfieldCheckboxes");
+        $f->attr('name', 'availableSets');
+        $f->label = __('Character Sets');
+        $f->description = __('The character sets that can make up the password.');
+        $f->notes = __('You must check digits and at least one of the letter options.');
+        $f->columnWidth = 40;
+        $f->showIf = "generatePassword=1";
+        $f->addOption('l', 'Lowercase Letters (abcdefghjkmnpqrstuvwxyz)');
+        $f->addOption('u', 'Uppercase Letters (ABCDEFGHJKMNPQRSTUVWXYZ)');
+        $f->addOption('d', 'Digits (23456789)');
+        $f->addOption('s', 'Special Characters (!@#$%&*?)');
+        $f->value = $data['availableSets'];
         $wrapper->add($f);
 
         // test send option
