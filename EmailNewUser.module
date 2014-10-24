@@ -80,28 +80,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
 
         //replace curly braces codes with matching PW field names
-        $body = $this->data['body'];
-        if (preg_match_all('/{([^}]*)}/', $body, $matches)) {
-            foreach ($matches[0] as $match) {
-                $field = str_replace(array('{','}'), '', $match);
-
-                if($field == "pass"){
-                    $replacement = $newPass;
-                }
-                elseif($field == "adminUrl"){
-                    $replacement = "http://".wire('config')->httpHost.wire('config')->urls->admin;
-                }
-                elseif($field == "fromEmail"){
-                    $replacement = $this->data['fromEmail'];
-                }
-                else{
-                    $replacement = $page->$field;
-                }
-
-                $body = str_replace($match, $replacement, $body);
-            }
-        }
-
+        $body = $this->parseBody($this->data['body'], $this->data['fromEmail'], $page, $newPass);
 
         if($page->pass == '' || $page->email == ''){
             $this->error($this->_("No email was sent to the new user because either their email address or password was not set."));
@@ -111,8 +90,33 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $this->message($this->_("{$page->name} was successfully sent a welcome email."));
         }
 
-
     }
+
+
+    public function parseBody($body, $fromEmail, $page, $newPass) {
+        if (preg_match_all('/{([^}]*)}/', $body, $matches)) {
+            foreach ($matches[0] as $match) {
+                $field = str_replace(array('{','}'), '', $match);
+
+                if($field == "pass") {
+                    $replacement = $newPass;
+                }
+                elseif($field == "adminUrl") {
+                    $replacement = "http://".wire('config')->httpHost.wire('config')->urls->admin;
+                }
+                elseif($field == "fromEmail") {
+                    $replacement = $fromEmail;
+                }
+                else {
+                    $replacement = $page->$field;
+                }
+
+                $body = str_replace($match, $replacement, $body);
+            }
+        }
+        return $body;
+    }
+
 
     // https://gist.github.com/tylerhall/521810
     // Generates a strong password of N length containing at least one lower case letter,
@@ -175,6 +179,12 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $data = array_merge(self::getDefaultData(), $data);
 
+        // send test email if requested
+        if (wire('input')->post->test) {
+            wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], EmailNewUser::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
+        }
+
+
         $wrapper = new InputFieldWrapper();
 
         $f = wire('modules')->get("InputfieldText");
@@ -206,6 +216,24 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->description = __('Whether to automatically generate a password for the user.');
         $f->attr('checked', $data['generatePassword'] ? 'checked' : '' );
         $f->notes = __("An automatically generated password will be assigned to the user.\nIf you have included {pass} in the email body then it will be emailed to them. If not, the password will be displayed in the message bar at the top of the page after you save the user - be sure to note it somewhere.");
+        $wrapper->add($f);
+
+        // test send option
+        if(wire('user')->email != '') {
+            $f = wire('modules')->get("InputfieldCheckbox");
+        }
+        else {
+            $f = wire('modules')->get("InputfieldMarkup");
+        }
+        $f->name = "test";
+        $f->label = __("Test Send");
+        if(wire('user')->email != '') {
+            $f->description = __('On settings submit, a test email will be sent to ' . wire('user')->email . ' with your account details.');
+        }
+        else {
+            $f->description = __('There is no email address associated with your user account. Please add one to your profile to be able to send a test message.');
+        }
+        $f->collapsed = Inputfield::collapsedBlank;
         $wrapper->add($f);
 
         return $wrapper;
