@@ -40,7 +40,8 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $this->addHookBefore('InputfieldPassword::render', $this, 'notRequiredNote');
             $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
         }
-        $this->addHookAfter('InputfieldPassword::processInput', $this, 'getPassword');
+        //$this->addHookAfter('InputfieldPassword::processInput', $this, 'getPassword');
+        $this->addHookAfter('Password::setPass', $this, 'getPassword'); // this hook allows detection of password when it is set via the API
         $this->pages->addHookBefore('saveReady', $this, 'sendNewUserEmail');
     }
 
@@ -58,8 +59,13 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
      * Get the plain text version of a manually entered password
      *
      */
-    public function getPassword(HookEvent $event) {
+    // this is the version that worked with the InputfieldPassword::processInput hook
+    /*public function getPassword(HookEvent $event) {
         $this->newPass = $event->object->value;
+    }*/
+
+    public function getPassword(HookEvent $event) {
+        $this->newPass = $event->arguments[0];
     }
 
 
