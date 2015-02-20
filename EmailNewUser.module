@@ -75,14 +75,14 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         if ($page->template != "user") return; //return now if not user template
 
+        // only email when new user is first published and from email address is set
+        if(!$page->isChanged('status') || $page->is(Page::statusUnpublished) || $this->data['fromEmail'] == '') return;
+
         // if that username already exists, exit now
         if($this->users->get($page->name)->id) {
             $this->error($this->_("A user with that name already exists."));
             return;
         }
-
-        // only email when new user is first published and from email address is set
-        if(!$page->isChanged('status') || $page->is(Page::statusUnpublished) || $this->data['fromEmail'] == '') return;
 
         if($this->data['generatePassword'] && $this->newPass == ''){
             $newPass = $this->generateStrongPassword($this->data['passLength'], false, implode(",", $this->data['availableSets']));
