@@ -40,8 +40,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $this->addHookBefore('InputfieldPassword::render', $this, 'notRequiredNote');
             $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
         }
-        //$this->addHookAfter('InputfieldPassword::processInput', $this, 'getPassword');
-        $this->addHookAfter('Password::setPass', $this, 'getPassword'); // this hook allows detection of password when it is set via the API
+        $page = $this->pages->get((int)$this->input->get->id);
+        if($page->template == "user") $this->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
+        $this->addHookAfter('Password::setPass', $this, 'getPassword');
         $this->pages->addHookBefore('saveReady', $this, 'sendNewUserEmail');
     }
 
@@ -51,19 +52,50 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     public function removeRequired(HookEvent $event) {
-        $event->object->required = false; //hack to remove required status so that automatically generated password can be added on saveReady
+        $event->object->required = false; //hack to remove required status so that automatically generated password can be added on save
     }
 
+    public function addEmailFields(HookEvent $event) {
+        $form = $event->return;
+        $page = $this->pages->get((int)$this->input->get->id);
+
+        $notes = '';
+        $forcePasswordChangeText = '';
+        if(wire('modules')->isInstalled("PasswordForceChange")) $forcePasswordChangeText = __("\n\nIf you are relying on the automatically generated password, and/or you are including the password in the email, you should propbably check 'Force password change on next login'.");
+        if(!$page->is(Page::statusUnpublished)) {
+            $checked = '';
+            $sendLabel = __("Re-send welcome message");
+            if($this->data['generatePassword']) $notes = __("WARNING: This will overwrite the user's existing password because you have the Generate Password option checked.\nYou can manually enter a new password to overwrite the automatically generated one.") . $forcePasswordChangeText;
+        }
+        else {
+            $checked = 'checked';
+            $sendLabel = __("Send welcome message");
+            if($this->data['generatePassword']) $notes = __("The system will generate an automatic password for the new user.") . $forcePasswordChangeText;
+        }
+
+        $f = wire('modules')->get('InputfieldCheckbox');
+        $f->attr('name', 'sendEmail');
+        $f->notes = $notes;
+        $f->label = $sendLabel;
+        $f->showIf = "email!=''";
+        $f->attr('checked', $checked);
+        $f->collapsed = Inputfield::collapsedBlank;
+        $form->append($f);
+
+        $f = wire('modules')->get('InputfieldTextarea');
+        $f->attr('name', 'emailMessage');
+        $f->label = "Email Message";
+        $f->showIf = "email!='', sendEmail=1";
+        $f->value = $this->data['body'];
+        $f->description = __("Body text for the email. Use this to overwrite the default message from the module config settings.");
+        $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email.\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://pwtestsub.dev/admin/ and ajones@umces.edu, respectively.");
+        $form->append($f);
+    }
 
     /**
      * Get the plain text version of a manually entered password
      *
      */
-    // this is the version that worked with the InputfieldPassword::processInput hook
-    /*public function getPassword(HookEvent $event) {
-        $this->newPass = $event->object->value;
-    }*/
-
     public function getPassword(HookEvent $event) {
         $this->newPass = $event->arguments[0];
     }
@@ -71,15 +103,21 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     public function sendNewUserEmail(HookEvent $event) {
 
-        $page = $event->arguments[0];
+        $page = $event->arguments(0);
+
+        // early exit if in admin and sendEmail checkbox was not selected
+        if($this->page->process == 'ProcessUser' && !$this->input->sendEmail) return;
 
         if ($page->template != "user") return; //return now if not user template
 
-        // only email when new user is first published and from email address is set
-        if(!$page->isChanged('status') || $page->is(Page::statusUnpublished) || $this->data['fromEmail'] == '') return;
+        if($this->modules->isInstalled("PasswordForceChange") && $this->input->force_passwd_change && !$page->hasPermission("profile-edit")) {
+            $this->error($this->_("No email was sent to the user because of Force Password Change errors."));
+            return;
+        }
 
-        // if that username already exists, exit now
-        if($this->users->get($page->name)->id) {
+        // if not using re-send option and the username already exists, exit now
+        // to get to this point with sendEmail not set, we must be using API, not admin
+        if(!$this->input->sendEmail && $this->users->get($page->name)->id) {
             $this->error($this->_("A user with that name already exists."));
             return;
         }
@@ -94,14 +132,20 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
 
         //replace curly braces codes with matching PW field names
-        $body = $this->parseBody($this->data['body'], $this->data['fromEmail'], $page, $newPass);
+        $body = $this->input->emailMessage ? $this->sanitizer->textarea($this->input->emailMessage) : $this->data['body'];
+        $body = $this->parseBody($body, $this->data['fromEmail'], $page, $newPass);
 
         if($page->pass == '' || $page->email == ''){
             $this->error($this->_("No email was sent to the new user because either their email address or password was not set."));
         }
         else{
-            wireMail($page->email, $this->data['fromEmail'], $this->data['subject'], $body);
-            $this->message($this->_("{$page->name} was successfully sent a welcome email."));
+            $sent = wireMail($page->email, $this->data['fromEmail'], $this->data['subject'], $body);
+            if($sent) {
+                $this->message($this->_("{$page->name} was successfully sent a welcome email."));
+            }
+            else {
+                $this->error($this->_("No email was sent to the new user because of an unknown problem. Please try the 'Re-send Welcome Message' option."));
+            }
         }
 
     }
