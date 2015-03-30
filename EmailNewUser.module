@@ -105,10 +105,10 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $page = $event->arguments(0);
 
-        // early exit if in admin and sendEmail checkbox was not selected
-        if($this->page->process == 'ProcessUser' && !$this->input->sendEmail) return;
 
-        if ($page->template != "user") return; //return now if not user template
+        if($this->page->process == 'ProcessUser' && !$this->input->sendEmail) return; // exit if in admin and sendEmail checkbox was not selected
+        if($this->page->process == 'ProcessProfile') return; // exit if editing profile
+        if ($page->template != "user") return; // exit if not user template
 
         if($this->modules->isInstalled("PasswordForceChange") && $this->input->force_passwd_change && !$page->hasPermission("profile-edit")) {
             $this->error($this->_("No email was sent to the user because of Force Password Change errors."));
