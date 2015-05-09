@@ -105,10 +105,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $page = $event->arguments(0);
 
-
         if($this->page->process == 'ProcessUser' && !$this->input->sendEmail) return; // exit if in admin and sendEmail checkbox was not selected
         if($this->page->process == 'ProcessProfile') return; // exit if editing profile
-        if ($page->template != "user") return; // exit if not user template
+        if($page->template != "user") return; // exit if not user template
 
         if($this->modules->isInstalled("PasswordForceChange") && $this->input->force_passwd_change && !$page->hasPermission("profile-edit")) {
             $this->error($this->_("No email was sent to the user because of Force Password Change errors."));
@@ -116,9 +115,8 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
 
         // if not using re-send option and the username already exists, exit now
-        // to get to this point with sendEmail not set, we must be using API, not admin
+        // to get to this point with sendEmail not set, there must be an API call (template or other module)
         if(!$this->input->sendEmail && $this->users->get($page->name)->id) {
-            $this->error($this->_("A user with that name already exists."));
             return;
         }
 
