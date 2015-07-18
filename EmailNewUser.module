@@ -16,6 +16,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
      */
     static public function getDefaultData() {
             return array(
+                "automaticEmailSend" => 1,
                 "fromEmail" => wire('config')->adminEmail,
                 "generatePassword" => "",
                 "subject" => "",
@@ -40,15 +41,14 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $this->addHookBefore('InputfieldPassword::render', $this, 'notRequiredNote');
             $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
         }
-        $page = $this->pages->get((int)$this->input->get->id);
-        if($page->template == "user") $this->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
+        if(wire('page')->process == "ProcessUser") $this->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
         $this->addHookAfter('Password::setPass', $this, 'getPassword');
         $this->pages->addHookBefore('saveReady', $this, 'sendNewUserEmail');
     }
 
     public function notRequiredNote(HookEvent $event) {
         $userpage = $this->pages->get((int)$this->input->get->id);
-        if($userpage->is(Page::statusUnpublished)) $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will overwrite the generated one.';
+        if($userpage->is(Page::statusUnpublished)) $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will override the generated one.';
     }
 
     public function removeRequired(HookEvent $event) {
@@ -57,18 +57,18 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     public function addEmailFields(HookEvent $event) {
         $form = $event->return;
-        $page = $this->pages->get((int)$this->input->get->id);
+        $page = $event->object->getPage();
 
         $notes = '';
         $forcePasswordChangeText = '';
+        $checked = '';
         if(wire('modules')->isInstalled("PasswordForceChange")) $forcePasswordChangeText = __("\n\nIf you are relying on the automatically generated password, and/or you are including the password in the email, you should propbably check 'Force password change on next login'.");
         if(!$page->is(Page::statusUnpublished)) {
-            $checked = '';
             $sendLabel = __("Re-send welcome message");
             if($this->data['generatePassword']) $notes = __("WARNING: This will overwrite the user's existing password because you have the Generate Password option checked.\nYou can manually enter a new password to overwrite the automatically generated one.") . $forcePasswordChangeText;
         }
         else {
-            $checked = 'checked';
+            if($this->data['automaticEmailSend']) $checked = 'checked';
             $sendLabel = __("Send welcome message");
             if($this->data['generatePassword']) $notes = __("The system will generate an automatic password for the new user.") . $forcePasswordChangeText;
         }
@@ -106,6 +106,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $page = $event->arguments(0);
 
         if($this->page->process == 'ProcessUser' && !$this->input->sendEmail) return; // exit if in admin and sendEmail checkbox was not selected
+        if($this->page->process != 'ProcessUser' && !$this->data['automaticEmailSend'] && !$page->sendEmail) return; //exit if using API and automatic email send not checked
         if($this->page->process == 'ProcessProfile') return; // exit if editing profile
         if($page->template != "user") return; // exit if not user template
 
@@ -247,6 +248,14 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
 
         $wrapper = new InputFieldWrapper();
+
+        $f = wire('modules')->get("InputfieldCheckbox");
+        $f->attr('name', 'automaticEmailSend');
+        $f->label = __('Automatic Email Send');
+        $f->description = __('If checked, the "Send Welcome Message" option will be automatically checked for each new user when they are created.');
+        $f->notes = __('This also affects API additions of new users. If you want this unchecked and want to force the email to be sent for a specific new user, use: $newuser->sendEmail = true;');
+        $f->attr('checked', $data['automaticEmailSend'] ? 'checked' : '' );
+        $wrapper->add($f);
 
         $f = wire('modules')->get("InputfieldText");
         $f->attr('name', 'fromEmail');
