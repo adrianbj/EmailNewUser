@@ -247,7 +247,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
 
 
-        $wrapper = new InputFieldWrapper();
+        $wrapper = new InputfieldWrapper();
 
         $f = wire('modules')->get("InputfieldCheckbox");
         $f->attr('name', 'automaticEmailSend');
