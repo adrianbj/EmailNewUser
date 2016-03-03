@@ -48,8 +48,10 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     public function notRequiredNote(HookEvent $event) {
         $process = $this->wire('process');
-        $userpage = $process->getPage();
-        if($userpage->is(Page::statusUnpublished)) $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will override the generated one.';
+        if($process instanceof WirePageEditor) {
+            $userpage = $process->getPage();
+            if($userpage->is(Page::statusUnpublished)) $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will override the generated one.';
+        }
     }
 
     public function removeRequired(HookEvent $event) {
