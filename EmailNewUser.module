@@ -135,7 +135,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         //replace curly braces codes with matching PW field names
         $body = $this->input->emailMessage ? $this->sanitizer->textarea($this->input->emailMessage) : $this->data['body'];
-        $body = $this->parseBody($body, $this->data['fromEmail'], $page, $newPass);
+        $body = self::parseBody($body, $this->data['fromEmail'], $page, $newPass);
 
         if($page->pass == '' || $page->email == ''){
             $this->error($this->_("No email was sent to the new user because either their email address or password was not set."));
@@ -153,7 +153,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
 
-    public function parseBody($body, $fromEmail, $page, $newPass) {
+    public static function parseBody($body, $fromEmail, $page, $newPass) {
         if (preg_match_all('/{([^}]*)}/', $body, $matches)) {
             foreach ($matches[0] as $match) {
                 $field = str_replace(array('{','}'), '', $match);
@@ -246,7 +246,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         // send test email if requested
         if (wire('input')->post->test) {
-            wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], EmailNewUser::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
+            wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], self::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
         }
 
 
