@@ -246,7 +246,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         // send test email if requested
         if (wire('input')->post->test) {
-            wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], EmailNewUser::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
+            wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], self::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
         }
 
 
