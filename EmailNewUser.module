@@ -18,6 +18,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             return array(
                 "automaticEmailSend" => 1,
                 "fromEmail" => wire('config')->adminEmail,
+                "fromName" => "",
                 "generatePassword" => "",
                 "subject" => "",
                 "body" => "",
@@ -43,10 +44,10 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
         if(wire('page')->process == "ProcessUser") $this->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
         $this->addHookAfter('Password::setPass', $this, 'getPassword');
-        $this->pages->addHookBefore('saveReady', $this, 'sendNewUserEmail');
+        $this->pages->addHookBefore('saveReady', $this, 'prepareNewUserEmail');
     }
 
-    public function notRequiredNote(HookEvent $event) {
+    protected function notRequiredNote(HookEvent $event) {
         $process = $this->wire('process');
         if($process instanceof WirePageEditor) {
             $userpage = $process->getPage();
@@ -54,11 +55,11 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
     }
 
-    public function removeRequired(HookEvent $event) {
+    protected function removeRequired(HookEvent $event) {
         $event->object->required = false; //hack to remove required status so that automatically generated password can be added on save
     }
 
-    public function addEmailFields(HookEvent $event) {
+    protected function addEmailFields(HookEvent $event) {
         $form = $event->return;
         $page = $event->object->getPage();
 
@@ -85,7 +86,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->collapsed = Inputfield::collapsedBlank;
         $form->append($f);
 
-        $f = wire('modules')->get('InputfieldTextarea');
+        $f = wire('modules')->get('InputfieldCKEditor');
         $f->attr('name', 'emailMessage');
         $f->label = "Email Message";
         $f->showIf = "email!='', sendEmail=1";
@@ -99,12 +100,12 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
      * Get the plain text version of a manually entered password
      *
      */
-    public function getPassword(HookEvent $event) {
+    protected function getPassword(HookEvent $event) {
         $this->newPass = $event->arguments[0];
     }
 
 
-    public function sendNewUserEmail(HookEvent $event) {
+    protected function prepareNewUserEmail(HookEvent $event) {
 
         $page = $event->arguments(0);
 
@@ -134,14 +135,14 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
 
         //replace curly braces codes with matching PW field names
-        $body = $this->input->emailMessage ? $this->sanitizer->textarea($this->input->emailMessage) : $this->data['body'];
-        $body = self::parseBody($body, $this->data['fromEmail'], $page, $newPass);
+        $htmlBody = $this->input->emailMessage ? $this->sanitizer->purify($this->input->emailMessage) : $this->sanitizer->purify($this->data['body']);
+        $htmlBody = $this->parseBody($htmlBody, $this->data['fromEmail'], $page, $newPass);
 
         if($page->pass == '' || $page->email == ''){
             $this->error($this->_("No email was sent to the new user because either their email address or password was not set."));
         }
         else{
-            $sent = wireMail($page->email, $this->data['fromEmail'], $this->data['subject'], $body);
+            $sent = $this->sendNewUserEmail($page->email, $this->data['fromEmail'], $this->data['fromName'], $this->data['subject'], $htmlBody);
             if($sent) {
                 $this->message($this->_("{$page->name} was successfully sent a welcome email."));
             }
@@ -153,8 +154,22 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
 
-    public static function parseBody($body, $fromEmail, $page, $newPass) {
-        if (preg_match_all('/{([^}]*)}/', $body, $matches)) {
+    private function sendNewUserEmail($to, $from, $fromName, $subject, $htmlBody) {
+        $mailer = $this->mail->new();
+        $mailer->to($to);
+        $mailer->from($from);
+        $mailer->fromName($fromName);
+        $mailer->subject($subject);
+        $mailer->body($this->parseTextBody($htmlBody));
+        $mailer->bodyHTML($htmlBody);
+        $sent = $mailer->send();
+
+        return $sent;
+    }
+
+
+    public function ___parseBody($htmlBody, $fromEmail, $page, $newPass) {
+        if (preg_match_all('/{([^}]*)}/', $htmlBody, $matches)) {
             foreach ($matches[0] as $match) {
                 $field = str_replace(array('{','}'), '', $match);
 
@@ -162,19 +177,69 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                     $replacement = $newPass;
                 }
                 elseif($field == "adminUrl") {
-                    $replacement = "http://".wire('config')->httpHost.wire('config')->urls->admin;
+                    $replacement = wire('config')->urls->httpAdmin;
                 }
                 elseif($field == "fromEmail") {
                     $replacement = $fromEmail;
                 }
-                else {
+                elseif($page->$field) {
                     $replacement = $page->$field;
                 }
+                else {
+                    // if no replacement available, add a non-breaking space
+                    // this prevents removal of line break when converting to plain text version
+                    $replacement = '&nbsp;';
+                }
 
-                $body = str_replace($match, $replacement, $body);
+                $htmlBody = str_replace($match, $replacement, $htmlBody);
             }
         }
-        return $body;
+        return $htmlBody;
+    }
+
+
+    private function parseTextBody($str) {
+        $str = wire('sanitizer')->textarea($str);
+        $str = $this->text_target($str);
+        $str = $this->remove_html_comments($str);
+        $str = preg_replace('/(<|>)\1{2}/is', '', $str);
+        $str = preg_replace(
+            array(// Remove invisible content
+                '@<head[^>]*?>.*?</head>@siu',
+                '@<style[^>]*?>.*?</style>@siu',
+                '@<script[^>]*?.*?</script>@siu',
+                '@<noscript[^>]*?.*?</noscript>@siu',
+                ),
+            "", //replace above with nothing
+            $str );
+        $str = preg_replace('#(<br */?>\s*)+#i', '<br />', $str);
+        $str = strip_tags($str);
+        $str = $this->replaceWhitespace($str);
+        return $str;
+    }
+
+
+    private function remove_html_comments($str) {
+        return preg_replace('/<!--(.|\s)*?-->/', '', $str);
+    }
+
+
+    //convert links to be url in parentheses after linked text
+    private function text_target($str) {
+        return preg_replace('/<a href="(.*?)">(.*?)<\\/a>/i', '$2 ($1)', str_replace(' target="_blank"','',$str));
+    }
+
+    private function replaceWhitespace($str) {
+        $result = $str;
+        foreach (array(
+        "  ", " \t",  " \r",  " \n",
+        "\t\t", "\t ", "\t\r", "\t\n",
+        "\r\r", "\r ", "\r\t", "\r\n",
+        "\n\n", "\n ", "\n\t", "\n\r",
+        ) as $replacement) {
+        $result = str_replace($replacement, $replacement[0], $result);
+        }
+        return $str !== $result ? $this->replaceWhitespace($result) : $result;
     }
 
 
@@ -190,7 +255,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     // Note: the $add_dashes option will increase the length of the password by
     // floor(sqrt(N)) characters.
 
-    public function generateStrongPassword($length = 9, $add_dashes = false, $available_sets = 'luds'){
+    private function generateStrongPassword($length = 9, $add_dashes = false, $available_sets = 'luds'){
 
         $sets = array();
         if(strpos($available_sets, 'l') !== false)
@@ -235,7 +300,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
      * @return InputfieldsWrapper
      *
      */
-    public static function getModuleConfigInputfields(array $data) {
+    public function getModuleConfigInputfields(array $data) {
 
         $data = array_merge(self::getDefaultData(), $data);
 
@@ -246,7 +311,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         // send test email if requested
         if (wire('input')->post->test) {
-            wireMail(wire('user')->email, $data['fromEmail'], $data['subject'], self::parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
+            $this->sendNewUserEmail(wire('user')->email, $data['fromEmail'], $data['subject'], $this->parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
         }
 
 
@@ -260,13 +325,23 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->attr('checked', $data['automaticEmailSend'] ? 'checked' : '' );
         $wrapper->add($f);
 
-        $f = wire('modules')->get("InputfieldText");
+        $f = wire('modules')->get("InputfieldEmail");
         $f->attr('name', 'fromEmail');
         $f->label = __('From email address');
         $f->description = __('Email address that the email will come from.');
-        $f->notes = __("If set, this will initially be populated with the adminEmail address defined in your site's config.php file. If this field is blank, the email will not be sent.");
+        $f->notes = __("If this field is blank, the email will not be sent.");
+        $f->columnWidth = 50;
         $f->value = $data['fromEmail'];
         $wrapper->add($f);
+
+        $f = wire('modules')->get("InputfieldText");
+        $f->attr('name', 'fromName');
+        $f->label = __('From Name');
+        $f->description = __('Name that the email will come from.');
+        $f->columnWidth = 50;
+        $f->value = $data['fromName'];
+        $wrapper->add($f);
+
 
         $f = wire('modules')->get("InputfieldText");
         $f->attr('name', 'subject');
@@ -275,12 +350,12 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->value = $data['subject'];
         $wrapper->add($f);
 
-        $f = wire('modules')->get("InputfieldTextarea");
+        $f = wire('modules')->get("InputfieldCKEditor");
         $f->attr('name', 'body');
         $f->label = __('Email Body');
         $f->description = __('Body text for the email');
-        $f->value = $data['body'];
         $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:\n---------------------------------------------------------------------------------------\n\nWelcome {first_name} {last_name}\n\nPlease login in at: {adminUrl}\n\nUsername: {name}\nPassword: {pass}\n\nIf you have any questions, please email us at: {fromEmail}\n\n---------------------------------------------------------------------------------------\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://".wire('config')->httpHost.wire('config')->urls->admin." and {$data['fromEmail']}, respectively.\n\n");
+        $f->value = $data['body'];
         $wrapper->add($f);
 
         $f = wire('modules')->get("InputfieldCheckbox");
