@@ -154,10 +154,10 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
 
-    private function sendNewUserEmail($to, $from, $fromName, $subject, $htmlBody) {
-        $mailer = $this->mail->new();
+    private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody) {
+        $mailer = $this->mail ? $this->mail->new() : wireMail();
         $mailer->to($to);
-        $mailer->from($from);
+        $mailer->from($fromEmail);
         $mailer->fromName($fromName);
         $mailer->subject($subject);
         $mailer->body($this->parseTextBody($htmlBody));
@@ -311,7 +311,15 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         // send test email if requested
         if (wire('input')->post->test) {
-            $this->sendNewUserEmail(wire('user')->email, $data['fromEmail'], $data['subject'], $this->parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
+
+            $sent = $this->sendNewUserEmail(wire('user')->email, $data['fromEmail'], $data['fromName'], $data['subject'], $this->parseBody($data['body'], $data['fromEmail'], wire('user'), 'password'));
+            if($sent) {
+                $this->message($this->_("Test email was sent successfully."));
+            }
+            else {
+                $this->error($this->_("Test email was NOT sent because of an unknown problem."));
+            }
+
         }
 
 
