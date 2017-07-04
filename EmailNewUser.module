@@ -174,7 +174,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody) {
         $mailer = $this->mail ? $this->mail->new() : wireMail();
         $mailer->to($to);
-        $mailer->bcc($this->data['bccEmail']);
+        if($this->data['bccEmail'] != '') $mailer->bcc($this->data['bccEmail']);
         $mailer->from($fromEmail);
         $mailer->fromName($fromName);
         $mailer->subject($subject);
