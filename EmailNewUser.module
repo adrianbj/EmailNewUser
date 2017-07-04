@@ -19,6 +19,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                 "automaticEmailSend" => 1,
                 "fromEmail" => wire('config')->adminEmail,
                 "fromName" => "",
+                "bccEmail" => "",
                 "generatePassword" => "",
                 "subject" => "",
                 "body" => "",
@@ -131,7 +132,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($page->template != "user") return; // exit if not user template
 
         if($this->wire('modules')->isInstalled("PasswordForceChange") && $this->wire('input')->force_passwd_change && !$page->hasPermission("profile-edit")) {
-            $this->error($this->_("No email was sent to the user because of Force Password Change errors."));
+            $this->error($this->_("No email was sent to the user because of Force Password Change errors. Correct the error and then check the 'Re-send welcome message' option."));
             return;
         }
 
@@ -173,6 +174,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody) {
         $mailer = $this->mail ? $this->mail->new() : wireMail();
         $mailer->to($to);
+        $mailer->bcc($this->data['bccEmail']);
         $mailer->from($fromEmail);
         $mailer->fromName($fromName);
         $mailer->subject($subject);
@@ -364,6 +366,15 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->description = __('Name that the email will come from.');
         $f->columnWidth = 50;
         $f->value = $data['fromName'];
+        $wrapper->add($f);
+
+        $f = $this->wire('modules')->get("InputfieldText");
+        $f->attr('name', 'bccEmail');
+        $f->label = __('Bcc Email');
+        $f->description = __('Email address to Bcc the email to.');
+        $f->notes = __('Useful if you want to also send the email to notify admin users.');
+        $f->value = $data['bccEmail'];
+        $f->collapsed = Inputfield::collapsedBlank;
         $wrapper->add($f);
 
 
