@@ -105,7 +105,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($this->wire('languages')) {
             foreach($this->wire('languages') as $language) {
                 if($language->isDefault()) continue;
-                $f->set("value$language", $this->data['body__'.$language]);
+                if(isset($this->data['body__'.$language])) $f->set("value$language", $this->data['body__'.$language]);
             }
         }
         $f->description = __("Body text for the email. Use this to overwrite the default message from the module config settings.");
