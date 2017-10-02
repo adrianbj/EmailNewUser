@@ -145,7 +145,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($this->data['generatePassword'] && $this->newPass == ''){
             $newPass = $this->generateStrongPassword($this->data['passLength'], false, implode(",", $this->data['availableSets']));
             $page->pass = $newPass;
-            $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
+            $this->wire('session')->message($this->_("The automatically generated password for {$page->name} is $newPass"));
         }
         else{ //manually entered only, or manually entered to override automatically generated password
             $newPass = $this->newPass;
@@ -156,15 +156,15 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $htmlBody = $this->parseBody($htmlBody, $this->data['fromEmail'], $page, $newPass);
 
         if($page->pass == '' || $page->email == ''){
-            $this->wire()->error($this->_("No email was sent to the new user because either their email address or password was not set."));
+            $this->wire('session')->error($this->_("No email was sent to the new user because either their email address or password was not set."));
         }
         else{
             $sent = $this->sendNewUserEmail($page->email, $this->data['fromEmail'], $this->data['fromName'], $this->data['subject'.$this->lang], $htmlBody);
             if($sent) {
-                $this->wire()->message($this->_("{$page->name} was successfully sent a welcome email."));
+                $this->wire('session')->message($this->_("{$page->name} was successfully sent a welcome email."));
             }
             else {
-                $this->wire()->error($this->_("No email was sent to the new user because of an unknown problem. Please try the 'Re-send Welcome Message' option."));
+                $this->wire('session')->error($this->_("No email was sent to the new user because of an unknown problem. Please try the 'Re-send Welcome Message' option."));
             }
         }
 
@@ -174,7 +174,11 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody) {
         $mailer = $this->mail ? $this->mail->new() : wireMail();
         $mailer->to($to);
-        if($this->data['bccEmail'] != '') $mailer->bcc($this->data['bccEmail']);
+        if($this->data['bccEmail'] != '') {
+            foreach(explode(',', $this->data['bccEmail']) as $bccEmail) {
+                $mailer->to(trim($bccEmail));
+            }
+        }
         $mailer->from($fromEmail);
         $mailer->fromName($fromName);
         $mailer->subject($subject);
@@ -325,17 +329,17 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $missing = 0;
         if(!in_array('d', $data['availableSets'])) $missing++;
         if(!in_array('l', $data['availableSets']) && !in_array('u', $data['availableSets'])) $missing++;
-        if($missing > 0) $this->wire()->error(__("You need to have digits and at least one of the letter options checked."));
+        if($missing > 0) $this->wire('session')->error(__("You need to have digits and at least one of the letter options checked."));
 
         // send test email if requested
         if ($this->wire('input')->post->test) {
 
             $sent = $this->sendNewUserEmail($this->wire('user')->email, $data['fromEmail'], $data['fromName'], $data['subject'.$this->lang], $this->parseBody($data['body'.$this->lang], $data['fromEmail'], $this->wire('user'), 'password'));
             if($sent) {
-                $this->wire()->message($this->_("Test email was sent successfully."));
+                $this->wire('session')->message($this->_("Test email was sent successfully."));
             }
             else {
-                $this->wire()->error($this->_("Test email was NOT sent because of an unknown problem."));
+                $this->wire('session')->error($this->_("Test email was NOT sent because of an unknown problem."));
             }
 
         }
@@ -370,9 +374,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $f = $this->wire('modules')->get("InputfieldText");
         $f->attr('name', 'bccEmail');
-        $f->label = __('Bcc Email');
-        $f->description = __('Email address to Bcc the email to.');
-        $f->notes = __('Useful if you want to also send the email to notify admin users.');
+        $f->label = __('Notify Other Users');
+        $f->description = __('Email addresses to also send the email to. Useful if you want to notify admins of new users.');
+        $f->notes = __('Provide a comma-separated list of addresses.');
         $f->value = $data['bccEmail'];
         $f->collapsed = Inputfield::collapsedBlank;
         $wrapper->add($f);

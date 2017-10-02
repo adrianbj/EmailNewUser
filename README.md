@@ -16,7 +16,7 @@ In the module configuration you create the custom message using any of the field
 
 Please let me know if you have any ideas for improvements.
 
-###Support
+### Support
 https://processwire.com/talk/topic/7051-email-new-user/
 
 ## License
