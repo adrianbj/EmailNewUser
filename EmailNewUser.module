@@ -22,9 +22,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                 "bccEmail" => "",
                 "generatePassword" => "",
                 "subject" => "",
-                "body" => "",
-                "passLength" => "9",
-                "availableSets" => array('l','u','d','s')
+                "body" => ""
             );
     }
 
@@ -48,25 +46,68 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     public function init() {
-        if($this->data['generatePassword']){
-            $this->addHookBefore('InputfieldPassword::render', $this, 'notRequiredNote');
-            $this->addHookBefore('InputfieldPassword::processInput', $this, 'removeRequired');
+    }
+
+    public function ready() {
+        if($this->data['generatePassword']) {
+            $this->addHookBefore('InputfieldPassword::render', $this, 'populatePassword');
+            $this->addHookAfter('InputfieldPassword::render', $this, 'removeAutocompleteOff');
         }
         if($this->wire('page')->process == "ProcessUser") $this->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
         $this->addHookAfter('Password::setPass', $this, 'getPassword');
         $this->pages->addHookBefore('saveReady', $this, 'prepareNewUserEmail');
     }
 
-    protected function notRequiredNote(HookEvent $event) {
-        $process = $this->wire('process');
-        if($process instanceof WirePageEditor) {
-            $userpage = $process->getPage();
-            if($userpage->is(Page::statusUnpublished)) $event->object->notes = 'NB: Because you chose to automatically generate the password for new users, you can leave these blank. However, if you do enter a password here, it will override the generated one.';
-        }
+    // this prevents Firefox check in InputfieldPassword.js that empties the automatically generated password
+    protected function removeAutocompleteOff(HookEvent $event) {
+        $event->return = str_replace('autocomplete="off"', '', $event->return);
     }
 
-    protected function removeRequired(HookEvent $event) {
-        $event->object->required = false; //hack to remove required status so that automatically generated password can be added on save
+    protected function populatePassword(HookEvent $event) {
+        $process = $this->wire('process');
+        $page = $process->getPage();
+        if($process instanceof WirePageEditor) {
+            $userpage = $process->getPage();
+            if($userpage->is(Page::statusUnpublished)) {
+                $inputfield = $event->object;
+
+                // randomPass method was only added in PW 3.0.22, so have to use alternate generator if not available
+                if(method_exists($page->pass, 'randomPass')) {
+
+                    $requirements = array(
+                        'lower' => 'false',
+                        'upper' => 'false',
+                        'digit' => 'false',
+                        'other' => 'false',
+                    );
+                    foreach($inputfield->requirements as $requirement) {
+                        if($requirement === 'letter') {
+                            $requirements['lower'] = 1;
+                        } else {
+                            $requirements[$requirement] = 1;
+                        }
+                    }
+
+                    $options = array(
+                        'minLength' => $inputfield->minlength,
+                        'minLower' => (int)$requirements['lower'],
+                        'minUpper' => (int)$requirements['upper'],
+                        'maxUpper' => (int)$requirements['upper'] > 0 ? (int)$requirements['upper'] : -1,
+                        'minDigits' => (int)$requirements['digit'],
+                        'maxDigits' => (int)$requirements['digit'] > 0 ? (int)$requirements['digit'] : -1,
+                        'minSymbols' => (int)$requirements['other'],
+                        'maxSymbols' => (int)$requirements['other'] > 0 ? $requirements['other'] : -1,
+                    );
+                    $newPass = $page->pass->randomPass($options);
+                }
+                else {
+                    $newPass = $this->passwordGenerator($inputfield->minlength, false, 'lud');
+                }
+                $inputfield->set('value', $newPass);
+                $inputfield->showPass = true;
+                $inputfield->notes = 'NB: Because you chose to automatically generate the password for new users, this has been populated automatically as: ' . $newPass;
+            }
+        }
     }
 
     protected function addEmailFields(HookEvent $event) {
@@ -114,7 +155,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     /**
-     * Get the plain text version of a manually entered password
+     * Get the plain text version of the entered password (manual or automatically generated)
      *
      */
     protected function getPassword(HookEvent $event) {
@@ -142,20 +183,14 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             return;
         }
 
-        if($this->data['generatePassword'] && $this->newPass == ''){
-            $newPass = $this->generateStrongPassword($this->data['passLength'], false, implode(",", $this->data['availableSets']));
-            $page->pass = $newPass;
-            $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
-        }
-        else{ //manually entered only, or manually entered to override automatically generated password
-            $newPass = $this->newPass;
-        }
+        $newPass = $this->newPass;
+        $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
 
         //replace curly braces codes with matching PW field names
         $htmlBody = $this->wire('input')->emailMessage ? $this->wire('sanitizer')->purify($this->input->{'emailMessage'.$this->lang}) : $this->wire('sanitizer')->purify($this->data['body'.$this->lang]);
         $htmlBody = $this->parseBody($htmlBody, $this->data['fromEmail'], $page, $newPass);
 
-        if($page->pass == '' || $page->email == ''){
+        if($page->pass == '' || $page->email == '') {
             $this->wire()->error($this->_("No email was sent to the new user because either their email address or password was not set."));
         }
         else{
@@ -277,7 +312,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     // Note: the $add_dashes option will increase the length of the password by
     // floor(sqrt(N)) characters.
 
-    private function generateStrongPassword($length = 9, $add_dashes = false, $available_sets = 'luds'){
+    private function passwordGenerator($length = 9, $add_dashes = false, $available_sets = 'luds') {
 
         $sets = array();
         if(strpos($available_sets, 'l') !== false)
@@ -291,7 +326,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $all = '';
         $password = '';
-        foreach($sets as $set){
+        foreach($sets as $set) {
             $password .= $set[array_rand(str_split($set))];
             $all .= $set;
         }
@@ -307,7 +342,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $dash_len = floor(sqrt($length));
         $dash_str = '';
-        while(strlen($password) > $dash_len){
+        while(strlen($password) > $dash_len) {
             $dash_str .= substr($password, 0, $dash_len) . '-';
             $password = substr($password, $dash_len);
         }
@@ -404,35 +439,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->label = __('Generate Password');
         $f->description = __('Whether to automatically generate a password for the user.');
         $f->attr('checked', $data['generatePassword'] ? 'checked' : '' );
-        $f->columnWidth = 40;
         $f->notes = __("An automatically generated password will be assigned to the user.\nIf you have included {pass} in the email body then it will be emailed to them. If not, the password will be displayed in the message bar at the top of the page after you save the user - be sure to note it somewhere.");
         $wrapper->add($f);
 
-        $f = $this->wire('modules')->get("InputfieldSelect");
-        $f->attr('name', 'passLength');
-        $f->label = __('Password Length');
-        $f->description = __('Number of characters in automatically generated password. Minimum of 6 characters is required by PW.');
-        $f->columnWidth = 20;
-        for($i=6;$i<16;$i++) $f->addOption($i,$i);
-        $f->showIf = "generatePassword=1";
-        $f->required = 1;
-        $f->requiredIf = "generatePassword=1";
-        $f->value = $data['passLength'];
-        $wrapper->add($f);
-
-        $f = $this->wire('modules')->get("InputfieldCheckboxes");
-        $f->attr('name', 'availableSets');
-        $f->label = __('Character Sets');
-        $f->description = __('The character sets that can make up the password.');
-        $f->notes = __('You must check digits and at least one of the letter options.');
-        $f->columnWidth = 40;
-        $f->showIf = "generatePassword=1";
-        $f->addOption('l', 'Lowercase Letters (abcdefghjkmnpqrstuvwxyz)');
-        $f->addOption('u', 'Uppercase Letters (ABCDEFGHJKMNPQRSTUVWXYZ)');
-        $f->addOption('d', 'Digits (23456789)');
-        $f->addOption('s', 'Special Characters (!@#$%&*?)');
-        $f->value = $data['availableSets'];
-        $wrapper->add($f);
 
         // test send option
         if($this->wire('user')->email != '') {
