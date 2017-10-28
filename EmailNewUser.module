@@ -46,6 +46,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
     public function init() {
+        $this->pages->addHookBefore('saveReady', $this, 'prepareNewUserEmail');
     }
 
     public function ready() {
@@ -55,7 +56,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
         if($this->wire('page')->process == "ProcessUser") $this->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
         $this->addHookAfter('Password::setPass', $this, 'getPassword');
-        $this->pages->addHookBefore('saveReady', $this, 'prepareNewUserEmail');
+
     }
 
     // this prevents Firefox check in InputfieldPassword.js that empties the automatically generated password
@@ -71,38 +72,8 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             if($userpage->is(Page::statusUnpublished)) {
                 $inputfield = $event->object;
 
-                // randomPass method was only added in PW 3.0.22, so have to use alternate generator if not available
-                if(method_exists($page->pass, 'randomPass')) {
+                $newPass = $this->passwordGenerator($inputfield->minlength, false, $this->buildPasswordCharacterSets($inputfield));
 
-                    $requirements = array(
-                        'lower' => 'false',
-                        'upper' => 'false',
-                        'digit' => 'false',
-                        'other' => 'false',
-                    );
-                    foreach($inputfield->requirements as $requirement) {
-                        if($requirement === 'letter') {
-                            $requirements['lower'] = 1;
-                        } else {
-                            $requirements[$requirement] = 1;
-                        }
-                    }
-
-                    $options = array(
-                        'minLength' => $inputfield->minlength,
-                        'minLower' => (int)$requirements['lower'],
-                        'minUpper' => (int)$requirements['upper'],
-                        'maxUpper' => (int)$requirements['upper'] > 0 ? (int)$requirements['upper'] : -1,
-                        'minDigits' => (int)$requirements['digit'],
-                        'maxDigits' => (int)$requirements['digit'] > 0 ? (int)$requirements['digit'] : -1,
-                        'minSymbols' => (int)$requirements['other'],
-                        'maxSymbols' => (int)$requirements['other'] > 0 ? $requirements['other'] : -1,
-                    );
-                    $newPass = $page->pass->randomPass($options);
-                }
-                else {
-                    $newPass = $this->passwordGenerator($inputfield->minlength, false, 'lud');
-                }
                 $inputfield->set('value', $newPass);
                 $inputfield->showPass = true;
                 $inputfield->notes = 'NB: Because you chose to automatically generate the password for new users, this has been populated automatically as: ' . $newPass;
@@ -183,7 +154,15 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             return;
         }
 
-        $newPass = $this->newPass;
+        if($this->data['generatePassword'] && $this->newPass == ''){
+            $newPass = $this->passwordGenerator($this->wire('fields')->get('pass')->minlength, false, $this->buildPasswordCharacterSets($this->wire('fields')->get('pass')));
+            $page->pass = $newPass;
+            $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
+        }
+        else{ //manually entered only, or manually entered to override automatically generated password
+            $newPass = $this->newPass;
+        }
+
         $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
 
         //replace curly braces codes with matching PW field names
@@ -297,6 +276,23 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $result = str_replace($replacement, $replacement[0], $result);
         }
         return $str !== $result ? $this->replaceWhitespace($result) : $result;
+    }
+
+
+    private function buildPasswordCharacterSets($inputfield) {
+        $characterSets = 'l'; // without lowercase password is always "Too Common"
+        foreach($inputfield->requirements as $requirement) {
+            if($requirement === 'upper') {
+                $characterSets .= 'u';
+            }
+            elseif($requirement === 'digit') {
+                $characterSets .= 'd';
+            }
+            elseif($requirement === 'other') {
+                $characterSets .= 's';
+            }
+        }
+        return $characterSets;
     }
 
 
