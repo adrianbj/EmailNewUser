@@ -281,9 +281,11 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     private function buildPasswordCharacterSets($inputfield) {
         $characterSets = 'lud'; // without these, the password is often validated as too common
-        foreach($inputfield->requirements as $requirement) {
-            if($requirement === 'other') {
-                $characterSets .= 's';
+        if($inputfield->requirements) {
+            foreach($inputfield->requirements as $requirement) {
+                if($requirement === 'other') {
+                    $characterSets .= 's';
+                }
             }
         }
         return $characterSets;
