@@ -353,11 +353,6 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $data = array_merge(self::getDefaultData(), $data);
 
-        $missing = 0;
-        if(!in_array('d', $data['availableSets'])) $missing++;
-        if(!in_array('l', $data['availableSets']) && !in_array('u', $data['availableSets'])) $missing++;
-        if($missing > 0) $this->wire()->error(__("You need to have digits and at least one of the letter options checked."));
-
         // send test email if requested
         if ($this->wire('input')->post->test) {
 

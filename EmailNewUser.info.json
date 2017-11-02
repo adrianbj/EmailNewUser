@@ -1,7 +1,7 @@
 {
 	"title": "Email New User",
 	"summary": "Email new user their account details, and optionally automatically generate a password for them.",
-	"version": "1.1.3",
+	"version": "1.1.4",
 	"author": "Adrian Jones",
     "href": "http://modules.processwire.com/modules/email-new-user/",
     "autoload": "template=admin",
