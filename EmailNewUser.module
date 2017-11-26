@@ -65,7 +65,6 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     protected function populatePassword(HookEvent $event) {
         $process = $this->wire('process');
-        $page = $process->getPage();
         if($process instanceof WirePageEditor) {
             $userpage = $process->getPage();
             if($userpage->is(Page::statusUnpublished)) {
