@@ -20,6 +20,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                 "fromEmail" => wire('config')->adminEmail,
                 "fromName" => "",
                 "bccEmail" => "",
+                "addParam" => "",
                 "generatePassword" => "",
                 "subject" => "",
                 "body" => ""
@@ -191,6 +192,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             foreach(explode(',', $this->data['bccEmail']) as $bccEmail) {
                 $mailer->to(trim($bccEmail));
             }
+        }
+        if($this->data['addParam'] != '') {
+            $mailer->param(trim($this->data['addParam']));
         }
         $mailer->from($fromEmail);
         $mailer->fromName($fromName);
@@ -399,6 +403,15 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->description = __('Email addresses to also send the email to. Useful if you want to notify admins of new users.');
         $f->notes = __('Provide a comma-separated list of addresses.');
         $f->value = $data['bccEmail'];
+        $f->collapsed = Inputfield::collapsedBlank;
+        $wrapper->add($f);
+
+        $f = $this->wire('modules')->get("InputfieldText");
+        $f->attr('name', 'addParam');
+        $f->label = __('Additional Param');
+        $f->description = __('Add an additional param for WireMail');
+        $f->notes = __('e.g. -f allowdemailsender@'.$this->wire('config')->httpHost);
+        $f->value = $data['addParam'];
         $f->collapsed = Inputfield::collapsedBlank;
         $wrapper->add($f);
 
