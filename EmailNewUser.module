@@ -59,7 +59,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $this->addHookAfter('Password::setPass', $this, 'getPassword');
     }
 
-    // this prevents Firefox check in InputfieldPassword.js that empties the automatically generated password
+    // this prevents check in InputfieldPassword.js that empties the automatically generated password
     protected function removeAutocompleteOff(HookEvent $event) {
         $event->return = str_replace(array('autocomplete="off"',"autocomplete='new-password'",'autocomplete="new-password"'), '', $event->return);
     }
