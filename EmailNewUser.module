@@ -415,7 +415,6 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->collapsed = Inputfield::collapsedBlank;
         $wrapper->add($f);
 
-
         $f = $this->wire('modules')->get("InputfieldText");
         $f->attr('name', 'subject');
         $f->label = __('Email Subject');
@@ -462,6 +461,5 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         return $wrapper;
     }
-
 
 }
