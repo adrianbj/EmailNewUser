@@ -3,12 +3,28 @@
 class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     /**
+     * Basic information about module
+     */
+    public static function getModuleInfo() {
+        return array(
+            'title' => 'Email New User',
+            'summary' => 'Email new user their account details, and optionally automatically generate a password for them.',
+            'author' => 'Adrian Jones',
+            'href' => 'http://modules.processwire.com/modules/email-new-user/',
+            'version' => '1.1.8',
+            'autoload' => "template=admin",
+            'singular' => true,
+            'icon' => 'envelope-o',
+            'requires' => 'ProcessWire>=2.5.14',
+        );
+    }
+
+    /**
      * Data as used by the get/set functions
      *
      */
     protected $data = array();
     protected $newPass = "";
-
 
    /**
      * Default configuration for module
@@ -134,7 +150,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         if($this->wire('page')->process == 'ProcessUser' && !$this->wire('input')->sendEmail) return; // exit if in admin and sendEmail checkbox was not selected
         if($this->wire('page')->process != 'ProcessUser' && !$this->data['automaticEmailSend'] && !$page->sendEmail) return; //exit if using API and automatic email send not checked
         if($this->wire('page')->process == 'ProcessProfile') return; // exit if editing profile
-        if($page->template != "user") return; // exit if not user template
+        if(!in_array($page->template->id, $this->wire('config')->userTemplateIDs)) return; //return now if not a user template
 
         if($this->wire('modules')->isInstalled("PasswordForceChange") && $this->wire('input')->force_passwd_change && !$page->hasPermission("profile-edit")) {
             $this->error($this->_("No email was sent to the user because of Force Password Change errors. Correct the error and then check the 'Re-send welcome message' option."));
