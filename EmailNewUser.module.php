@@ -24,7 +24,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             'summary' => 'Email new user their account details, and optionally automatically generate a password for them.',
             'author' => 'Adrian Jones',
             'href' => 'http://modules.processwire.com/modules/email-new-user/',
-            'version' => '1.1.9',
+            'version' => '1.1.10',
             'autoload' => "template=admin",
             'singular' => true,
             'icon' => 'envelope-o',
@@ -84,7 +84,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $this->wire()->addHookBefore('InputfieldPassword::render', $this, 'populatePassword');
         }
         if($this->wire('page')->process == "ProcessUser") $this->wire()->addHookAfter('ProcessPageEdit::buildFormContent', $this, 'addEmailFields');
-        $this->->wire()addHookAfter('Password::setPass', $this, 'getPassword');
+        $this->wire()->addHookAfter('Password::setPass', $this, 'getPassword');
     }
 
     protected function populatePassword(HookEvent $event) {
