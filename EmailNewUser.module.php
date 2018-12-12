@@ -1,5 +1,18 @@
 <?php
 
+/**
+ * Processwire module to email new user their account details.
+ * by Adrian Jones
+ *
+ * ProcessWire 3.x
+ * Copyright (C) 2011 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://www.processwire.com
+ * http://www.ryancramer.com
+ *
+ */
+
 class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
     /**
