@@ -4,12 +4,8 @@
  * Processwire module to email new user their account details.
  * by Adrian Jones
  *
- * ProcessWire 3.x
- * Copyright (C) 2011 by Ryan Cramer
+ * Copyright (C) 2020 by Adrian Jones
  * Licensed under GNU/GPL v2, see LICENSE.TXT
- *
- * http://www.processwire.com
- * http://www.ryancramer.com
  *
  */
 
@@ -24,7 +20,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             'summary' => 'Email new user their account details, and optionally automatically generate a password for them.',
             'author' => 'Adrian Jones',
             'href' => 'http://modules.processwire.com/modules/email-new-user/',
-            'version' => '1.1.10',
+            'version' => '1.1.11',
             'autoload' => "template=admin",
             'singular' => true,
             'icon' => 'envelope-o',
@@ -188,9 +184,16 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
 
-        // replace curly braces codes with matching PW field names
-        $htmlBody = $this->wire('input')->emailMessage ? $this->wire('sanitizer')->purify($this->input->{'emailMessage'.$this->lang}) : $this->wire('sanitizer')->purify($this->data['body'.$this->lang]);
-        $htmlBody = $this->parseBody($htmlBody, $this->data['fromEmail'], $page, $newPass);
+        if($page->emailMessage) {
+            $htmlBody = $page->emailMessage;
+        }
+        elseif($this->wire('input')->emailMessage) {
+            $htmlBody = $this->input->{'emailMessage'.$this->lang};
+        }
+        else {
+            $htmlBody = $this->data['body'.$this->lang];
+        }
+        $htmlBody = $this->parseBody($this->wire('sanitizer')->purify($htmlBody), $this->data['fromEmail'], $page, $newPass);
 
         if($page->pass == '' || $page->email == '') {
             $this->wire()->error($this->_("No email was sent to the new user because either their email address or password was not set."));
@@ -209,7 +212,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
 
     private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody) {
-        $mailer = $this->mail ? $this->mail->new() : wireMail();
+        $mailer = $this->wire('mail') ? $this->wire('mail')->new() : wireMail();
         $mailer->to($to);
         if($this->data['bccEmail'] != '') {
             foreach(explode(',', $this->data['bccEmail']) as $bccEmail) {
