@@ -20,7 +20,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             'summary' => 'Email new user their account details, and optionally automatically generate a password for them.',
             'author' => 'Adrian Jones',
             'href' => 'http://modules.processwire.com/modules/email-new-user/',
-            'version' => '1.1.11',
+            'version' => '1.1.12',
             'autoload' => "template=admin",
             'singular' => true,
             'icon' => 'envelope-o',
@@ -107,40 +107,42 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $forcePasswordChangeText = '';
         $checked = '';
         if($this->wire('modules')->isInstalled("PasswordForceChange")) $forcePasswordChangeText = __("\n\nIf you are relying on the automatically generated password, and/or you are including the password in the email, you should propbably check 'Force password change on next login'.");
-        if(!$page->is(Page::statusUnpublished)) {
+        if(!$page->is(Page::statusUnpublished) && $page->hasPermission("profile-edit")) {
             $sendLabel = __("Re-send welcome message");
             if($this->data['generatePassword']) $notes = __("WARNING: This will overwrite the user's existing password because you have the Generate Password option checked.\nYou can manually enter a new password to overwrite the automatically generated one.") . $forcePasswordChangeText;
         }
-        else {
+        elseif($page->hasPermission("profile-edit")) {
             if($this->data['automaticEmailSend']) $checked = 'checked';
             $sendLabel = __("Send welcome message");
             if($this->data['generatePassword']) $notes = __("The system will generate an automatic password for the new user.") . $forcePasswordChangeText;
         }
 
-        $f = $this->wire('modules')->get('InputfieldCheckbox');
-        $f->attr('name', 'sendEmail');
-        $f->notes = $notes;
-        $f->label = $sendLabel;
-        $f->showIf = "email!=''";
-        $f->attr('checked', $checked);
-        $f->collapsed = Inputfield::collapsedBlank;
-        $form->append($f);
+        if($page->hasPermission("profile-edit")) {
+            $f = $this->wire('modules')->get('InputfieldCheckbox');
+            $f->attr('name', 'sendEmail');
+            $f->notes = $notes;
+            $f->label = $sendLabel;
+            $f->showIf = "email!=''";
+            $f->attr('checked', $checked);
+            $f->collapsed = Inputfield::collapsedBlank;
+            $form->append($f);
 
-        $f = $this->wire('modules')->get('InputfieldCKEditor');
-        $f->attr('name', 'emailMessage');
-        $f->label = "Email Message";
-        $f->showIf = "email!='', sendEmail=1";
-        $f->value = $this->data['body'];
-        $f->useLanguages = true;
-        if($this->wire('languages')) {
-            foreach($this->wire('languages') as $language) {
-                if($language->isDefault()) continue;
-                if(isset($this->data['body__'.$language])) $f->set("value$language", $this->data['body__'.$language]);
+            $f = $this->wire('modules')->get('InputfieldCKEditor');
+            $f->attr('name', 'emailMessage');
+            $f->label = "Email Message";
+            $f->showIf = "email!='', sendEmail=1";
+            $f->value = $this->data['body'];
+            $f->useLanguages = true;
+            if($this->wire('languages')) {
+                foreach($this->wire('languages') as $language) {
+                    if($language->isDefault()) continue;
+                    if(isset($this->data['body__'.$language])) $f->set("value$language", $this->data['body__'.$language]);
+                }
             }
+            $f->description = __("Body text for the email. Use this to overwrite the default message from the module config settings.");
+            $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email.\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://".$this->wire('config')->httpHost.$this->wire('config')->urls->admin." and {$this->data['fromEmail']}, respectively.");
+            $form->append($f);
         }
-        $f->description = __("Body text for the email. Use this to overwrite the default message from the module config settings.");
-        $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email.\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://".$this->wire('config')->httpHost.$this->wire('config')->urls->admin." and {$this->data['fromEmail']}, respectively.");
-        $form->append($f);
     }
 
     /**
