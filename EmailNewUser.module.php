@@ -44,6 +44,8 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                 "automaticEmailSend" => 1,
                 "fromEmail" => wire('config')->adminEmail,
                 "fromName" => "",
+                "replyToEmail" => "",
+                "replyToName" => "",
                 "bccEmail" => "",
                 "addParam" => "",
                 "generatePassword" => "",
@@ -200,7 +202,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $this->wire()->error($this->_("No email was sent to the new user because either their email address or password was not set."));
         }
         else{
-            $sent = $this->sendNewUserEmail($page->email, $this->data['fromEmail'], $this->data['fromName'], $this->data['subject'.$this->lang], $htmlBody);
+            $sent = $this->sendNewUserEmail($page->email, $this->data['fromEmail'], $this->data['fromName'], $this->data['subject'.$this->lang], $htmlBody, $this->data['replyToEmail'], $this->data['replyToName']);
             if($sent) {
                 $this->wire()->message($this->_("{$page->name} was successfully sent a welcome email."));
             }
@@ -212,7 +214,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
     }
 
 
-    private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody) {
+    private function sendNewUserEmail($to, $fromEmail, $fromName, $subject, $htmlBody, $replyToEmail=false, $replyToName=false) {
         $mailer = $this->wire('mail') ? $this->wire('mail')->new() : wireMail();
         $mailer->to($to);
         if($this->data['bccEmail'] != '') {
@@ -225,6 +227,9 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         }
         $mailer->from($fromEmail);
         $mailer->fromName($fromName);
+        if($replyToEmail) {
+            $mailer->replyTo($replyToEmail, $replyToName);
+        }
         $mailer->subject($subject);
         $mailer->body($this->parseTextBody($htmlBody));
         $mailer->bodyHTML($htmlBody);
@@ -386,7 +391,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         // send test email if requested
         if ($this->wire('input')->post->test) {
 
-            $sent = $this->sendNewUserEmail($this->wire('user')->email, $data['fromEmail'], $data['fromName'], $data['subject'.$this->lang], $this->parseBody($data['body'.$this->lang], $data['fromEmail'], $this->wire('user'), 'password'));
+            $sent = $this->sendNewUserEmail($this->wire('user')->email, $data['fromEmail'], $data['fromName'], $data['subject'.$this->lang], $this->parseBody($data['body'.$this->lang], $data['fromEmail'], $this->wire('user'), 'password'), $data['replyToEmail'], $data['replyToName']);
             if($sent) {
                 $this->wire()->message($this->_("Test email was sent successfully."));
             }
@@ -409,7 +414,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $f = $this->wire('modules')->get("InputfieldEmail");
         $f->attr('name', 'fromEmail');
-        $f->label = __('From email address');
+        $f->label = __('From Email Address');
         $f->description = __('Email address that the email will come from.');
         $f->notes = __("If this field is blank, the email will not be sent.");
         $f->columnWidth = 50;
@@ -422,6 +427,20 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->description = __('Name that the email will come from.');
         $f->columnWidth = 50;
         $f->value = $data['fromName'];
+        $wrapper->add($f);
+
+        $f = $this->wire('modules')->get("InputfieldEmail");
+        $f->attr('name', 'replyToEmail');
+        $f->label = __('Reply To Email Address');
+        $f->columnWidth = 50;
+        $f->value = $data['replyToEmail'];
+        $wrapper->add($f);
+
+        $f = $this->wire('modules')->get("InputfieldText");
+        $f->attr('name', 'replyToName');
+        $f->label = __('Reply To Name');
+        $f->columnWidth = 50;
+        $f->value = $data['replyToName'];
         $wrapper->add($f);
 
         $f = $this->wire('modules')->get("InputfieldText");
