@@ -93,7 +93,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
                 $newPass = $this->passwordGenerator($minLength, false, $this->buildPasswordCharacterSets($inputfield));
                 $inputfield->set('value', $newPass);
                 $inputfield->showPass = true;
-                $inputfield->notes = 'NB: Because you chose to automatically generate the password for new users, this has been populated automatically as: ' . $newPass;
+                $inputfield->notes = sprintf(__('NB: Because you chose to automatically generate the password for new users, this has been populated automatically as: %s'), $newPass);
             }
         }
     }
@@ -106,7 +106,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $notes = '';
         $forcePasswordChangeText = '';
         $checked = '';
-        if($this->wire('modules')->isInstalled("PasswordForceChange")) $forcePasswordChangeText = __("\n\nIf you are relying on the automatically generated password, and/or you are including the password in the email, you should propbably check 'Force password change on next login'.");
+        if($this->wire('modules')->isInstalled("PasswordForceChange")) $forcePasswordChangeText = __("\n\nIf you are relying on the automatically generated password, and/or you are including the password in the email, you should probably check 'Force password change on next login'.");
         if(!$page->is(Page::statusUnpublished)) {
             $sendLabel = __("Re-send welcome message");
             if($this->data['generatePassword']) $notes = __("WARNING: This will overwrite the user's existing password because you have the Generate Password option checked.\nYou can manually enter a new password to overwrite the automatically generated one.") . $forcePasswordChangeText;
@@ -128,7 +128,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
 
         $f = $this->wire('modules')->get('InputfieldCKEditor');
         $f->attr('name', 'emailMessage');
-        $f->label = "Email Message";
+        $f->label = __("Email Message");
         $f->showIf = "email!='', sendEmail=1, roles.count>1";
         $f->value = $this->data['body'];
         $f->useLanguages = true;
@@ -139,7 +139,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             }
         }
         $f->description = __("Body text for the email. Use this to overwrite the default message from the module config settings.");
-        $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email.\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://".$this->wire('config')->httpHost.$this->wire('config')->urls->admin." and {$this->data['fromEmail']}, respectively.");
+        $f->notes = sprintf(__("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email.\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return %1\$s and %2\$s, respectively."), 'http://'.$this->wire('config')->httpHost.$this->wire('config')->urls->admin, $this->data['fromEmail']);
         $form->append($f);
 
     }
@@ -177,13 +177,13 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
             $minLength = $this->wire('fields')->get('pass')->minlength > 12 ? $this->wire('fields')->get('pass')->minlength : 12;
             $newPass = $this->passwordGenerator($minLength, false, $this->buildPasswordCharacterSets($this->wire('fields')->get('pass')));
             $page->pass = $newPass;
-            $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
+            $this->wire()->message(sprintf($this->_('The automatically generated password for %1$s is %2$s'), $page->name, $newPass));
         }
         else{ // manually entered only, or manually entered to override automatically generated password
             $newPass = $this->newPass;
         }
 
-        $this->wire()->message($this->_("The automatically generated password for {$page->name} is $newPass"));
+        $this->wire()->message(sprintf($this->_('The automatically generated password for %1$s is %2$s'), $page->name, $newPass));
 
         if($page->emailMessage) {
             $htmlBody = $page->emailMessage;
@@ -202,7 +202,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         else{
             $sent = $this->sendNewUserEmail($page->email, $this->data['fromEmail'], $this->data['fromName'], $this->data['subject'.$this->lang], $htmlBody);
             if($sent) {
-                $this->wire()->message($this->_("{$page->name} was successfully sent a welcome email."));
+                $this->wire()->message(sprintf($this->_('%s was successfully sent a welcome email.'), $page->name));
             }
             else {
                 $this->wire()->error($this->_("No email was sent to the new user because of an unknown problem. Please try the 'Re-send Welcome Message' option."));
@@ -437,7 +437,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->attr('name', 'addParam');
         $f->label = __('Additional Param');
         $f->description = __('Add an additional param for WireMail');
-        $f->notes = __('e.g. -f allowdemailsender@'.$this->wire('config')->httpHost);
+        $f->notes = sprintf(__('e.g. -f allowdemailsender@%s'), $this->wire('config')->httpHost);
         $f->value = $data['addParam'];
         $f->collapsed = Inputfield::collapsedBlank;
         $wrapper->add($f);
@@ -454,7 +454,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->attr('name', 'body');
         $f->label = __('Email Body');
         $f->description = __('Body text for the email');
-        $f->notes = __("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:\n---------------------------------------------------------------------------------------\n\nWelcome {first_name} {last_name}\n\nPlease login in at: {adminUrl}\n\nUsername: {name}\nPassword: {pass}\n\nIf you have any questions, please email us at: {fromEmail}\n\n---------------------------------------------------------------------------------------\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return http://".$this->wire('config')->httpHost.$this->wire('config')->urls->admin." and {$data['fromEmail']}, respectively.\n\n");
+        $f->notes = sprintf(__("Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:\n---------------------------------------------------------------------------------------\n\nWelcome {first_name} {last_name}\n\nPlease login in at: {adminUrl}\n\nUsername: {name}\nPassword: {pass}\n\nIf you have any questions, please email us at: {fromEmail}\n\n---------------------------------------------------------------------------------------\nPlease note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return %1\$s and %2\$s, respectively.\n\n"), 'http://'.$this->wire('config')->httpHost.$this->wire('config')->urls->admin, $data['fromEmail']);
         $f->value = $data['body'];
         $f->useLanguages = true;
         $wrapper->add($f);
@@ -478,7 +478,7 @@ class EmailNewUser extends WireData implements Module, ConfigurableModule {
         $f->name = "test";
         $f->label = __("Test Send");
         if($this->wire('user')->email != '') {
-            $f->description = __('On settings submit, a test email will be sent to ' . $this->wire('user')->email . ' with your account details.');
+            $f->description = sprintf(__('On settings submit, a test email will be sent to %s with your account details.'), $this->wire('user')->email);
         }
         else {
             $f->description = __('There is no email address associated with your user account. Please add one to your profile to be able to send a test message.');

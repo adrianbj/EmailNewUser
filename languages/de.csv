@@ -1,0 +1,82 @@
+original,translated,description,file,hash
+No email was sent to the user because of Force Password Change errors. Correct the error and then check the 'Re-send welcome message' option.,"Es wurde keine E-Mail gesendet, weil beim erzwungenen Passwortwechsel ein Fehler aufgetreten ist. Beheben Sie den Fehler und wählen Sie dann „Willkommensnachricht erneut senden“.",,site/modules/EmailNewUser/EmailNewUser.module.php,e80d07b2976692412124f0d339cf7aee
+The automatically generated password for %1$s is %2$s,Das automatisch erzeugte Passwort für %1$s lautet %2$s,,site/modules/EmailNewUser/EmailNewUser.module.php,3b3644cdc366fb0d31b8f3646fefad32
+No email was sent to the new user because either their email address or password was not set.,"Es wurde keine E-Mail an den neuen Benutzer gesendet, weil keine E-Mail-Adresse oder kein Passwort gesetzt ist.",,site/modules/EmailNewUser/EmailNewUser.module.php,ab1b7c1d638d4217a5d00fb78bd669b8
+%s was successfully sent a welcome email.,Die Willkommensnachricht wurde erfolgreich an %s gesendet.,,site/modules/EmailNewUser/EmailNewUser.module.php,77d1180d90665c8e28e28b7d024ca295
+No email was sent to the new user because of an unknown problem. Please try the 'Re-send Welcome Message' option.,Wegen eines unbekannten Problems wurde keine E-Mail an den neuen Benutzer gesendet. Bitte versuchen Sie „Willkommensnachricht erneut senden“.,,site/modules/EmailNewUser/EmailNewUser.module.php,3b32b4ce8af64f3959865aa3ee80cfcd
+Test email was sent successfully.,Die Test-E-Mail wurde erfolgreich versendet.,,site/modules/EmailNewUser/EmailNewUser.module.php,81494f8d20cb4d39ccd1fbed03357245
+Test email was NOT sent because of an unknown problem.,Die Test-E-Mail wurde wegen eines unbekannten Problems NICHT versendet.,,site/modules/EmailNewUser/EmailNewUser.module.php,6282a308616b7756e7305075d3d724f8
+"NB: Because you chose to automatically generate the password for new users, this has been populated automatically as: %s","Hinweis: Da für neue Benutzer automatisch ein Passwort erzeugt wird, wurde dieses Feld ausgefüllt mit: %s",,site/modules/EmailNewUser/EmailNewUser.module.php,3cec94170ad5c20c6aecf3a172394cfd
+"
+
+If you are relying on the automatically generated password, and/or you are including the password in the email, you should probably check 'Force password change on next login'.","
+
+Wenn Sie das automatisch erzeugte Passwort verwenden oder es in der E-Mail mitschicken, sollten Sie „Passwortwechsel bei nächster Anmeldung erzwingen“ anhaken.",,site/modules/EmailNewUser/EmailNewUser.module.php,14a64a3e768b1b9f19c9744d376b1c18
+Re-send welcome message,Willkommensnachricht erneut senden,,site/modules/EmailNewUser/EmailNewUser.module.php,6b5fa74ccb417747024bc06329e0eec3
+"WARNING: This will overwrite the user's existing password because you have the Generate Password option checked.
+You can manually enter a new password to overwrite the automatically generated one.","ACHTUNG: Das bestehende Passwort des Benutzers wird überschrieben, weil „Passwort erzeugen“ aktiviert ist.
+Sie können stattdessen selbst ein neues Passwort eingeben.",,site/modules/EmailNewUser/EmailNewUser.module.php,52eb34782665c60c2df4f6b5e4b78fad
+Send welcome message,Willkommensnachricht senden,,site/modules/EmailNewUser/EmailNewUser.module.php,3a059cde4ab0ee9d4e2284fe8c20576a
+The system will generate an automatic password for the new user.,Das System erzeugt automatisch ein Passwort für den neuen Benutzer.,,site/modules/EmailNewUser/EmailNewUser.module.php,fb739ba5fb5e0cd50ca5e0fa2f8330f8
+Email Message,Text der E-Mail,,site/modules/EmailNewUser/EmailNewUser.module.php,87b74ebf71923a7992adcc3bb0cad08e
+Body text for the email. Use this to overwrite the default message from the module config settings.,Text der E-Mail. Hier können Sie den Standardtext aus den Moduleinstellungen für diesen Benutzer anpassen.,,site/modules/EmailNewUser/EmailNewUser.module.php,99abcbab8f7ada799bead55ee438fe17
+"Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email.
+Please note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return %1$s and %2$s, respectively.","Verwenden Sie {name} und {pass} oder beliebige andere Felder des Benutzer-Templates, z. B. {first_name}, an der Stelle im Text, an der sie in der E-Mail erscheinen sollen.
+Hinweis: {adminUrl} und {fromEmail} sind zwei Sonderplatzhalter und keine Felder des Benutzer-Templates. Sie werden durch %1$s bzw. %2$s ersetzt.",,site/modules/EmailNewUser/EmailNewUser.module.php,59b7523f4a202e17a08f1b58b8fcf663
+Automatic Email Send,Automatisch senden,,site/modules/EmailNewUser/EmailNewUser.module.php,7f2d063d1d49c61810f63476d0de4b08
+"If checked, the ""Send Welcome Message"" option will be automatically checked for each new user when they are created.","Wenn aktiviert, ist „Willkommensnachricht senden“ bei jedem neuen Benutzer bereits angehakt.",,site/modules/EmailNewUser/EmailNewUser.module.php,a0cf94afd45dc19871bb763948fa18a8
+"This also affects API additions of new users. If you want this unchecked and want to force the email to be sent for a specific new user, use: $newuser->sendEmail = true;","Gilt auch für Benutzer, die per API angelegt werden. Ist diese Option deaktiviert und soll die E-Mail für einen bestimmten neuen Benutzer trotzdem gesendet werden, verwenden Sie: $newuser->sendEmail = true;",,site/modules/EmailNewUser/EmailNewUser.module.php,1304aa8da9f079f4c7019442560128de
+From email address,Absender-E-Mail-Adresse,,site/modules/EmailNewUser/EmailNewUser.module.php,6f6da7aec649851c977b6bf4e083977d
+Email address that the email will come from.,"E-Mail-Adresse, von der die E-Mail gesendet wird.",,site/modules/EmailNewUser/EmailNewUser.module.php,afd0fb4bef803c62098898b799762fd8
+"If this field is blank, the email will not be sent.","Ist dieses Feld leer, wird keine E-Mail gesendet.",,site/modules/EmailNewUser/EmailNewUser.module.php,2cfa40dcf8aade42b3987cdf42d54781
+From Name,Absendername,,site/modules/EmailNewUser/EmailNewUser.module.php,4a4a8fe0c6dfb6bd2a41755d15eb6f0b
+Name that the email will come from.,"Name, der als Absender erscheint.",,site/modules/EmailNewUser/EmailNewUser.module.php,19cdf31ead8b6cde146972ef276b7902
+Notify Other Users,Weitere Empfänger,,site/modules/EmailNewUser/EmailNewUser.module.php,4e6a44174324dc30fdd6ed3d6aa0d7e9
+Email addresses to also send the email to. Useful if you want to notify admins of new users.,"E-Mail-Adressen, die die E-Mail zusätzlich erhalten, z. B. um Administratoren über neue Benutzer zu informieren.",,site/modules/EmailNewUser/EmailNewUser.module.php,7a60e2f81d3524c4888e809612337bba
+Provide a comma-separated list of addresses.,Mehrere Adressen durch Kommas trennen.,,site/modules/EmailNewUser/EmailNewUser.module.php,b32c6287ec87b145300bb6b3d1e720d6
+Additional Param,Zusätzlicher Parameter,,site/modules/EmailNewUser/EmailNewUser.module.php,de9958222481c1c5fe08c49e33c987da
+Add an additional param for WireMail,Zusätzlicher Parameter für WireMail,,site/modules/EmailNewUser/EmailNewUser.module.php,9a726beea0fa56beaf0ee5dbb7e739ea
+e.g. -f allowdemailsender@%s,z. B. -f allowdemailsender@%s,,site/modules/EmailNewUser/EmailNewUser.module.php,b01b571a362893533723510405b09b69
+Email Subject,Betreff,,site/modules/EmailNewUser/EmailNewUser.module.php,e3868f7e6e90b6b55f60ac7d71dcb8ce
+Subject text for the email,Betreff der E-Mail,,site/modules/EmailNewUser/EmailNewUser.module.php,952623716695497958153b4a76a380de
+Email Body,E-Mail-Text,,site/modules/EmailNewUser/EmailNewUser.module.php,1b394670c01ca90b098c272deb3bf880
+Body text for the email,Text der E-Mail,,site/modules/EmailNewUser/EmailNewUser.module.php,16f51231cdbca84e4e7664b491aa80fc
+"Use: {name} and {pass}, or any other fields from the user template, eg. {first_name} in the text where you want them to appear in the email. eg:
+---------------------------------------------------------------------------------------
+
+Welcome {first_name} {last_name}
+
+Please login in at: {adminUrl}
+
+Username: {name}
+Password: {pass}
+
+If you have any questions, please email us at: {fromEmail}
+
+---------------------------------------------------------------------------------------
+Please note that {adminUrl} and {fromEmail} are two special codes and not fields from the user template. These will return %1$s and %2$s, respectively.
+
+","Verwenden Sie {name} und {pass} oder beliebige andere Felder des Benutzer-Templates, z. B. {first_name}, an der Stelle im Text, an der sie in der E-Mail erscheinen sollen. Beispiel:
+---------------------------------------------------------------------------------------
+
+Willkommen {first_name} {last_name}
+
+Bitte melden Sie sich an unter: {adminUrl}
+
+Benutzername: {name}
+Passwort: {pass}
+
+Bei Fragen schreiben Sie uns an: {fromEmail}
+
+---------------------------------------------------------------------------------------
+Hinweis: {adminUrl} und {fromEmail} sind zwei Sonderplatzhalter und keine Felder des Benutzer-Templates. Sie werden durch %1$s bzw. %2$s ersetzt.
+
+",,site/modules/EmailNewUser/EmailNewUser.module.php,f300c07cfd00c8439a4d3641c5055078
+Generate Password,Passwort erzeugen,,site/modules/EmailNewUser/EmailNewUser.module.php,57a1065e8326c828afaf21b186fba9a1
+Whether to automatically generate a password for the user.,"Legt fest, ob automatisch ein Passwort für den Benutzer erzeugt wird.",,site/modules/EmailNewUser/EmailNewUser.module.php,ce71b0ce7fc2ed0ff5f500594d4cbcc2
+"An automatically generated password will be assigned to the user.
+If you have included {pass} in the email body then it will be emailed to them. If not, the password will be displayed in the message bar at the top of the page after you save the user - be sure to note it somewhere.","Dem Benutzer wird ein automatisch erzeugtes Passwort zugewiesen.
+Steht {pass} im E-Mail-Text, wird es mitgeschickt. Andernfalls erscheint es nach dem Speichern oben in der Meldungsleiste – notieren Sie es sich.",,site/modules/EmailNewUser/EmailNewUser.module.php,4c669aabbe92e14a50dddb784a382e1a
+Test Send,Test-E-Mail senden,,site/modules/EmailNewUser/EmailNewUser.module.php,e4476bd625eac215726b1afd9dcff263
+"On settings submit, a test email will be sent to %s with your account details.",Beim Speichern der Einstellungen wird eine Test-E-Mail mit Ihren Zugangsdaten an %s gesendet.,,site/modules/EmailNewUser/EmailNewUser.module.php,799e150cabe127a84edff55be86a3d31
+There is no email address associated with your user account. Please add one to your profile to be able to send a test message.,"Ihrem Benutzerkonto ist keine E-Mail-Adresse zugeordnet. Bitte ergänzen Sie eine in Ihrem Profil, um eine Test-E-Mail senden zu können.",,site/modules/EmailNewUser/EmailNewUser.module.php,0b3a4b886ed21893770ffd4f5ff032c2
